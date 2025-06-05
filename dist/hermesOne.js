@@ -1,4 +1,5 @@
 (function () {
+  const scriptTag = document.currentScript || document.querySelector('script[src*="hermesOne.min.js"]');
   const ENDPOINT = "http://91.107.181.122:7778/api/v1/project/test";
   const SCROLL_THRESHOLD = 0.5; // 50%
   const TIME_ON_PAGE_THRESHOLD = 10 * 1000; // 10 seconds
