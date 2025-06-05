@@ -68,9 +68,9 @@
 
   // --- Helper: Send event
   function send(data) {
-    console.log("odin key is: ", OdinKey);
     try {
-      const json = JSON.stringify(data);
+      bodyData = {"data": data, "OdinKey": OdinKey}
+      const json = JSON.stringify(bodyData);
       navigator.sendBeacon?.(ENDPOINT, json) ||
       fetch(ENDPOINT, {
         method: "POST",
