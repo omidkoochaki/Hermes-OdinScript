@@ -84,7 +84,7 @@
   // --- 1. Track Clicks
   function handleClick(e) {
     localStorage.setItem("ab_last_activity", Date.now().toString());
-    const data = buildEvent("click", e.target);
+    const data = buildEvent("click", e.target, {coordinates: { x: e.clientX, y: e.clientY }});
     send(data);
   }
 
