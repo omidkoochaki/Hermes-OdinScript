@@ -2,6 +2,7 @@
   const ENDPOINT = "http://91.107.181.122:7778/api/v1/project/test";
   const SCROLL_THRESHOLD = 0.5; // 50%
   const TIME_ON_PAGE_THRESHOLD = 10 * 1000; // 10 seconds
+  const OdinKey = scriptTag?.dataset.odinKey || '';
 
   // --- Generate UUID
   function uuid() {
@@ -71,7 +72,7 @@
       navigator.sendBeacon?.(ENDPOINT, json) ||
       fetch(ENDPOINT, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type": "application/json", "OdinKey": OdinKey},
         body: json
       });
     } catch (e) {}
