@@ -1,18 +1,19 @@
 (function () {
   const scriptTag = document.currentScript || document.querySelector('script[src*="hermesOne.min.js"]');
   const ENDPOINT = "http://91.107.181.122:7778/api/v1/project/test";
-  const SCROLL_THRESHOLD = 0.5; // 50%
-  const TIME_ON_PAGE_THRESHOLD = 10 * 1000; // 10 seconds
+  const SCROLL_THRESHOLD = 0.5;
+  const TIME_ON_PAGE_THRESHOLD = 10 * 1000;
+  const SEND_INTERVAL = 10 * 1000; // هر ۱۰ ثانیه
   const OdinKey = scriptTag?.dataset.odinKey || '';
-  
-  // --- Generate UUID
+
+  const eventQueue = [];
+
   function uuid() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
       (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
     );
   }
 
-  // --- Identify user & session
   const userId = localStorage.getItem("ab_user_id") || (() => {
     const id = uuid();
     localStorage.setItem("ab_user_id", id);
@@ -20,7 +21,7 @@
   })();
 
   const now = Date.now();
-  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  const SESSION_TIMEOUT = 30 * 60 * 1000;
   let sessionId = localStorage.getItem("ab_session_id");
   let lastActivity = parseInt(localStorage.getItem("ab_last_activity") || "0", 10);
 
@@ -31,7 +32,6 @@
   localStorage.setItem("ab_session_id", sessionId);
   localStorage.setItem("ab_last_activity", now.toString());
 
-  // --- Helper: Build event payload
   function buildEvent(event, el = null, custom = {}) {
     return {
       event,
@@ -66,29 +66,44 @@
     };
   }
 
-  // --- Helper: Send event
-  function send(data) {
+  function enqueue(data) {
+    eventQueue.push(data);
+  }
+
+  function flushQueue() {
+    if (eventQueue.length === 0) return;
+
+    const batch = eventQueue.splice(0, eventQueue.length); // تمام ایونت‌ها رو بگیر و صف رو خالی کن
+
+    const payload = {
+      data: batch,
+      OdinKey: OdinKey
+    };
+
     try {
-      bodyData = {"data": data, "OdinKey": OdinKey}
-      const json = JSON.stringify(bodyData);
+      const json = JSON.stringify(payload);
       navigator.sendBeacon?.(ENDPOINT, json) ||
       fetch(ENDPOINT, {
         method: "POST",
-        headers: {"Content-Type": "application/json",
-          "OdinKey": OdinKey},
+        headers: {
+          "Content-Type": "application/json",
+          "OdinKey": OdinKey
+        },
         body: json
       });
     } catch (e) {}
   }
 
-  // --- 1. Track Clicks
+  setInterval(flushQueue, SEND_INTERVAL);
+
+  // --- Trackers
   function handleClick(e) {
     localStorage.setItem("ab_last_activity", Date.now().toString());
-    const data = buildEvent("click", e.target, {coordinates: { x: e.clientX, y: e.clientY }});
-    send(data);
+    enqueue(buildEvent("click", e.target, {
+      coordinates: { x: e.clientX, y: e.clientY }
+    }));
   }
 
-  // --- 2. Track Scroll Depth
   let scrollTracked = false;
   function handleScroll() {
     if (scrollTracked) return;
@@ -96,25 +111,21 @@
     const totalHeight = document.body.scrollHeight;
     if (scrollDepth / totalHeight >= SCROLL_THRESHOLD) {
       scrollTracked = true;
-      send(buildEvent("scroll-depth", null, { depth: SCROLL_THRESHOLD }));
+      enqueue(buildEvent("scroll-depth", null, { depth: SCROLL_THRESHOLD }));
     }
   }
 
-  // --- 3. Time on page engagement
   setTimeout(() => {
-    send(buildEvent("engaged"));
+    enqueue(buildEvent("engaged"));
   }, TIME_ON_PAGE_THRESHOLD);
 
-  // --- 4. Track unload (optional)
   window.addEventListener("beforeunload", () => {
-    send(buildEvent("unload"));
+    flushQueue(); // هرچی مونده سریعاً بفرست
   });
 
-  // --- 5. Expose custom tracking API
   window.abTracker = {
     track: (eventName, extra = {}) => {
-      const data = buildEvent(eventName, null, { custom: extra });
-      send(data);
+      enqueue(buildEvent(eventName, null, { custom: extra }));
     },
     optOut: () => {
       localStorage.setItem("ab_optout", "1");
@@ -124,7 +135,6 @@
     }
   };
 
-  // --- Attach listeners if not opted out
   if (!localStorage.getItem("ab_optout")) {
     document.addEventListener("DOMContentLoaded", () => {
       document.body.addEventListener("click", handleClick);
@@ -132,4 +142,3 @@
     });
   }
 })();
-
