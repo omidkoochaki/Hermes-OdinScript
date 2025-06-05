@@ -4,7 +4,7 @@
   const SCROLL_THRESHOLD = 0.5; // 50%
   const TIME_ON_PAGE_THRESHOLD = 10 * 1000; // 10 seconds
   const OdinKey = scriptTag?.dataset.odinKey || '';
-
+  
   // --- Generate UUID
   function uuid() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -68,12 +68,14 @@
 
   // --- Helper: Send event
   function send(data) {
+    console.log("odin key is: ", OdinKey);
     try {
       const json = JSON.stringify(data);
       navigator.sendBeacon?.(ENDPOINT, json) ||
       fetch(ENDPOINT, {
         method: "POST",
-        headers: {"Content-Type": "application/json", "OdinKey": OdinKey},
+        headers: {"Content-Type": "application/json",
+          "OdinKey": OdinKey},
         body: json
       });
     } catch (e) {}
