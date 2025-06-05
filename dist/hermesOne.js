@@ -67,14 +67,12 @@
   // --- Helper: Send event
   function send(data) {
     try {
-      const jsonData = JSON.stringify(data);
-      console.log('Sending:', jsonData);
-      console.log('Sending:', data);
+      const json = JSON.stringify(data);
       navigator.sendBeacon?.(ENDPOINT, json) ||
       fetch(ENDPOINT, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: jsonData
+        body: json
       });
     } catch (e) {}
   }
