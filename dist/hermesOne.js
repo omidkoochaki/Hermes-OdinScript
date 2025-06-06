@@ -1,6 +1,6 @@
 (function () {
   const scriptTag = document.currentScript || document.querySelector('script[src*="hermesOne.min.js"]');
-  const ENDPOINT = "http://91.107.181.122:7778/api/v1/event/";
+  const ENDPOINT = "http://91.107.181.122:7777/api/v1/event/";
   const SCROLL_THRESHOLD = 0.5;
   const TIME_ON_PAGE_THRESHOLD = 10 * 1000;
   const SEND_INTERVAL = 10 * 1000; // هر ۱۰ ثانیه
