@@ -143,9 +143,44 @@
     }
   };
 
+  function registerView() {
+    pageEnterTime = Date.now();
+    enqueue(buildEvent("view"));
+  }
+
+  function registerPageExit() {
+    const duration = Date.now() - pageEnterTime;
+    enqueue(buildEvent("page-exit", null, { duration }));
+  }
+
+  function observeUrlChanges() {
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    function handleRouteChange() {
+      registerPageExit();
+      registerView();
+    }
+
+    history.pushState = function (...args) {
+      originalPushState.apply(this, args);
+      handleRouteChange();
+    };
+
+    history.replaceState = function (...args) {
+      originalReplaceState.apply(this, args);
+      handleRouteChange();
+    };
+
+    window.addEventListener("popstate", () => {
+      handleRouteChange();
+    });
+  }
+
   if (!localStorage.getItem("ab_optout")) {
     document.addEventListener("DOMContentLoaded", () => {
-      enqueue(buildEvent("view")); // 👈 ثبت ایونت ویو
+      registerView();              // first view
+      observeUrlChanges();        // SPA support
       document.body.addEventListener("click", handleClick);
       document.addEventListener("scroll", handleScroll, { passive: true });
     });
