@@ -145,6 +145,7 @@
 
   if (!localStorage.getItem("ab_optout")) {
     document.addEventListener("DOMContentLoaded", () => {
+      enqueue(buildEvent("view")); // 👈 ثبت ایونت ویو
       document.body.addEventListener("click", handleClick);
       document.addEventListener("scroll", handleScroll, { passive: true });
     });
