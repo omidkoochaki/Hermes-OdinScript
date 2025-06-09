@@ -150,9 +150,16 @@
 
   window.addEventListener("beforeunload", () => {
     const duration = Date.now() - pageEnterTime;
-    enqueue(buildEvent("page-exit", null, { duration }));
+    const event = buildEvent("page-exit", null, {});
+
+    // Add duration directly to `page` object
+    if (!event.page) event.page = {};
+    event.page.duration = Math.round(duration / 1000); // in seconds
+
+    enqueue(event);
     flushQueue();
   });
+
 
   window.abTracker = {
     track: (eventName, extra = {}) => {
@@ -176,8 +183,12 @@
 
   function registerPageExit() {
     const duration = Date.now() - pageEnterTime;
-    enqueue(buildEvent("page-exit", null, { duration }));
+    const event = buildEvent("page-exit", null, {});
+    if (!event.page) event.page = {};
+    event.page.duration = Math.round(duration / 1000); // in seconds
+    enqueue(event);
   }
+
 
   function observeUrlChanges() {
     const originalPushState = history.pushState;
