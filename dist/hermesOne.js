@@ -40,7 +40,27 @@
     return "Desktop";
   }
 
+  function getSourceType(utm, referrer) {
+  if (utm.utm_source) {
+    return utm.utm_source;
+  }
+
+  if (!referrer) {
+    return "direct";
+  }
+
+  const searchEngines = ["google.", "bing.", "yahoo.", "duckduckgo.", "yandex."];
+  if (searchEngines.some(engine => referrer.includes(engine))) {
+    return "natural";
+  }
+
+  return "referral";
+  }
+
   function buildEvent(event, el = null, custom = {}) {
+    const utm = Object.fromEntries(new URLSearchParams(location.search).entries());
+    const referrer = document.referrer || null;
+
     return {
       event,
       timestamp: new Date().toISOString(),
@@ -52,9 +72,15 @@
         class: el.className || null,
         text: el.innerText?.substring(0, 100) || null
       } : null,
+      source: {
+        type: getSourceType(utm, referrer),
+        utm_source: utm.utm_source || null,
+        utm_medium: utm.utm_medium || null,
+        utm_campaign: utm.utm_campaign || null,
+        referrer: referrer
+      },
       page: {
         url: location.href,
-        referrer: document.referrer || null,
         title: document.title,
         viewport: {
           width: window.innerWidth,
@@ -63,8 +89,7 @@
         scroll: {
           x: window.scrollX,
           y: window.scrollY
-        },
-        utm: Object.fromEntries(new URLSearchParams(location.search).entries())
+        }
       },
       device: {
         type: getDeviceType(),
@@ -75,6 +100,7 @@
       ...custom
     };
   }
+
 
   function enqueue(data) {
     eventQueue.push(data);
